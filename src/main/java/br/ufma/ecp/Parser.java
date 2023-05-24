@@ -2,6 +2,9 @@ package br.ufma.ecp;
 
 import br.ufma.ecp.token.Token;
 import br.ufma.ecp.token.TokenType;
+import br.ufma.ecp.SymbolTable.Kind;
+import br.ufma.ecp.SymbolTable.Symbol;;
+
 
 
 public class Parser {
@@ -52,20 +55,63 @@ public class Parser {
 
         
     }
+    
+    // 'var' type varName ( ',' varName)* ';'
+    void parseVarDec() {
+
+        printNonTerminal("varDec");
+        expectPeek(TokenType.VAR);
+        SymbolTable.Kind kind = Kind.VAR;
+
+        // 'int' | 'char' | 'boolean' | className
+        expectPeek(TokenType.INT, TokenType.CHAR, TokenType.BOOLEAN, TokenType.IDENT);
+        String type = currentToken.lexeme;
+        expectPeek(TokenType.IDENT);
+        String name = currentToken.lexeme;
+        symbolTable.define(name, type, kind);
+
+        while (peekTokenIs(TokenType.COMMA)) {
+            expectPeek(TokenType.COMMA);
+            expectPeek(TokenType.IDENT);
+            name = currentToken.lexeme;
+            symbolTable.define(name, type, kind);
+
+        }
+
+        expectPeek(TokenType.SEMICOLON);
+        printNonTerminal("/varDec");
+    }
 
     // classVarDec → ( 'static' | 'field' ) type varName ( ',' varName)* ';'
-    public void parseClassVarDec () {
+    void parseClassVarDec() {
         printNonTerminal("classVarDec");
         expectPeek(TokenType.FIELD, TokenType.STATIC);
 
-        //SymbolTable.Kind kind = Kind.STATIC;
+        SymbolTable.Kind kind = Kind.STATIC;
+        if (currentTokenIs(TokenType.FIELD))
+            kind = Kind.FIELD;
+
+        // 'int' | 'char' | 'boolean' | className
         expectPeek(TokenType.INT, TokenType.CHAR, TokenType.BOOLEAN, TokenType.IDENT);
+        String type = currentToken.lexeme;
         expectPeek(TokenType.IDENT);
+        
+        String name = currentToken.lexeme;
+        symbolTable.define(name, type, kind);
+        
+        while (peekTokenIs(TokenType.COMMA)) {
+            expectPeek(TokenType.COMMA);
+            expectPeek(TokenType.IDENT);
+
+            name = currentToken.lexeme;
+            symbolTable.define(name, type, kind);
+
+        }
         expectPeek(TokenType.SEMICOLON);
+        printNonTerminal("/classVarDec");
     }
 
-
-
+    
 
 
     //Funções Auxiliares
