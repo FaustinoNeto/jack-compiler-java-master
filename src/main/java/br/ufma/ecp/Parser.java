@@ -3,7 +3,9 @@ package br.ufma.ecp;
 import br.ufma.ecp.token.Token;
 import br.ufma.ecp.token.TokenType;
 import br.ufma.ecp.SymbolTable.Kind;
-import br.ufma.ecp.SymbolTable.Symbol;;
+import br.ufma.ecp.SymbolTable.Symbol;
+import br.ufma.ecp.VmWriter.Segment;
+import br.ufma.ecp.VmWriter.Command;
 
 
 
@@ -15,11 +17,17 @@ public class Parser {
     private Token peekToken;
     private StringBuilder xmlOutput = new StringBuilder();
     private SymbolTable symbolTable;
+    private VmWriter vmWriter;
 
     private String className; // nome da classe
+    private int ifLabelNum; // numero de if
+    private int whileLabelNum; // numero de while
 
     public Parser (byte[] input) {
         scan = new Scanner(input);
+
+        symbolTable = new SymbolTable();
+        vmWriter = new VmWriter();
         nextToken();        
     }
 
@@ -55,7 +63,7 @@ public class Parser {
 
         
     }
-    
+
     // 'var' type varName ( ',' varName)* ';'
     void parseVarDec() {
 
@@ -110,6 +118,92 @@ public class Parser {
         expectPeek(TokenType.SEMICOLON);
         printNonTerminal("/classVarDec");
     }
+
+    // ( 'constructor' | 'function' | 'method' ) ( 'void' | type) subroutineName
+    // '(' parameterList ')' subroutineBody
+    void parseSubroutineDec() {
+        printNonTerminal("subroutineDec");
+
+        ifLabelNum = 0;
+        whileLabelNum = 0;
+        symbolTable.startSubroutine();
+
+        expectPeek(TokenType.CONSTRUCTOR, TokenType.FUNCTION, TokenType.METHOD);
+        var subroutineType = currentToken.type;
+
+        if (subroutineType == TokenType.METHOD) {
+            symbolTable.define("this", className, Kind.ARG);
+        }
+
+        // 'int' | 'char' | 'boolean' | className
+        expectPeek(TokenType.VOID, TokenType.INT, TokenType.CHAR, TokenType.BOOLEAN, TokenType.IDENT);
+        expectPeek(TokenType.IDENT);
+        
+        var functName = className + "." + currentToken.lexeme;
+        
+
+        expectPeek(TokenType.LPAREN);
+        parseParameterList();
+        expectPeek(TokenType.RPAREN);
+        parseSubroutineBody(functName, subroutineType);
+
+        printNonTerminal("/subroutineDec");
+    }
+
+     // ((type varName) ( ',' type varName)*)?
+     void parseParameterList() {
+        printNonTerminal("parameterList");
+        SymbolTable.Kind kind = Kind.ARG;
+
+        if (!peekTokenIs(TokenType.RPAREN)) // verifica se tem pelo menos uma expressao
+        {
+            expectPeek(TokenType.INT, TokenType.CHAR, TokenType.BOOLEAN, TokenType.IDENT);
+            String type = currentToken.lexeme;
+            expectPeek(TokenType.IDENT);
+            String name = currentToken.lexeme;
+            symbolTable.define(name, type, kind);
+
+            while (peekTokenIs(TokenType.COMMA)) {
+                expectPeek(TokenType.COMMA);
+                expectPeek(TokenType.INT, TokenType.CHAR, TokenType.BOOLEAN, TokenType.IDENT);
+                type = currentToken.lexeme;
+
+                expectPeek(TokenType.IDENT);
+                name = currentToken.lexeme;
+
+                symbolTable.define(name, type, kind);
+
+            }
+        }
+        printNonTerminal("/parameterList");
+    }
+
+     // '{' varDec* statements '}'
+     void parseSubroutineBody(String functName, TokenType subroutineType) {
+
+        printNonTerminal("subroutineBody");
+        expectPeek(TokenType.LBRACE);
+        while (peekTokenIs(TokenType.VAR)) {
+            parseVarDec();
+        }
+        var numlocals = symbolTable.varCont(Kind.VAR);
+        vmWriter.writeFunction(functName, numlocals);
+        if (subroutineType == TokenType.CONSTRUCTOR) {
+            vmWriter.writePush(Segment.CONST, symbolTable.varCont(Kind.FIELD));
+            vmWriter.writeCall("Memory.alloc", 1);
+            vmWriter.writePop(Segment.POINTER, 0);
+        }
+
+        if (subroutineType == TokenType.METHOD) {
+            vmWriter.writePush(Segment.ARG, 0);
+            vmWriter.writePop(Segment.POINTER, 0);
+        }
+
+        
+        expectPeek(TokenType.RBRACE);
+        printNonTerminal("/subroutineBody");
+    }
+
 
     
 
