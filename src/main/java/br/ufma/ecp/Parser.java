@@ -3,10 +3,10 @@ package br.ufma.ecp;
 import br.ufma.ecp.token.Token;
 import br.ufma.ecp.token.TokenType;
 import br.ufma.ecp.SymbolTable.Kind;
-import br.ufma.ecp.SymbolTable.Symbol;
+//import br.ufma.ecp.SymbolTable.Symbol;
 import br.ufma.ecp.VmWriter.Segment;
 import br.ufma.ecp.VmWriter.Command;
-import br.ufma.ecp.Scanner;
+//import br.ufma.ecp.Scanner;
 
 
 
@@ -298,7 +298,7 @@ public class Parser {
 
         var labelTrue = "IF_TRUE" + ifLabelNum;
         var labelFalse = "IF_FALSE" + ifLabelNum;
-        var labelEnd = "IF_END" + ifLabelNum;
+        //var labelEnd = "IF_END" + ifLabelNum;
 
         ifLabelNum++;
 
@@ -451,7 +451,7 @@ public class Parser {
 
             case IDENT:
                 expectPeek(TokenType.IDENT);
-                Symbol s = symbolTable.resolve(currentToken.lexeme);
+                //Symbol s = symbolTable.resolve(currentToken.lexeme);
                 if (peekTokenIs(TokenType.LPAREN) || peekTokenIs(TokenType.DOT)) {
                     parseSubroutineCall();
                 } else { // variavel comum ou array
