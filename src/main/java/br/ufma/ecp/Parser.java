@@ -6,6 +6,8 @@ import br.ufma.ecp.SymbolTable.Kind;
 import br.ufma.ecp.SymbolTable.Symbol;
 import br.ufma.ecp.VmWriter.Segment;
 import br.ufma.ecp.VmWriter.Command;
+import br.ufma.ecp.Scanner;
+
 
 
 
@@ -38,7 +40,7 @@ public class Parser {
         peekToken = scan.nextToken();        
     }
 
-    public void parse () {
+    public void parser () {
         parseClass();
     }
 
@@ -56,7 +58,7 @@ public class Parser {
         }
 
         while (peekTokenIs(TokenType.FUNCTION) || peekTokenIs(TokenType.CONSTRUCTOR) || peekTokenIs(TokenType.METHOD)) {
-            //parseSubroutineDec();
+            parseSubroutineDec();
         }      
         
         expectPeek(TokenType.RBRACE);
@@ -254,7 +256,7 @@ public class Parser {
             vmWriter.writePop(Segment.THAT, 0); // Store right hand side evaluation in THAT 0.
 
         } else {
-            vmWriter.writePop(kindSegment2(symbol.kind()), symbol.index());
+            //vmWriter.writePop(kindSegment2(symbol.kind()), symbol.index());
         }
 
         expectPeek(TokenType.SEMICOLON);
@@ -316,17 +318,17 @@ public class Parser {
         expectPeek(TokenType.RBRACE);
 
         if (peekTokenIs(TokenType.ELSE)) {
-            vmWriter.writeGoto(labelEnd);
+            //vmWriter.writeGoto(labelEnd);
         }
 
-        vmWriter.writeLabel(labelFalse);
+       // vmWriter.writeLabel(labelFalse);
 
         if (peekTokenIs(TokenType.ELSE)) {
             expectPeek(TokenType.ELSE);
             expectPeek(TokenType.LBRACE);
             parseStatements();
             expectPeek(TokenType.RBRACE);
-            vmWriter.writeLabel(labelEnd);
+            //vmWriter.writeLabel(labelEnd);
         }
 
         printNonTerminal("/ifStatement");
@@ -456,14 +458,14 @@ public class Parser {
                     if (peekTokenIs(TokenType.LBRACKET)) { // array
                         expectPeek(TokenType.LBRACKET);
                         parseExpression();
-                        vmWriter.writePush(kindSegment2(s.kind()), s.index());
-                        vmWriter.writeArithmetic(Command.ADD);
+                        //vmWriter.writePush(kindSegment2(s.kind()), s.index());
+                        //vmWriter.writeArithmetic(Command.ADD);
                         expectPeek(TokenType.RBRACKET);
-                        vmWriter.writePop(Segment.POINTER, 1); // pop address pointer into pointer 1
-                        vmWriter.writePush(Segment.THAT, 0); // push the value of the address pointer back onto stack
+                        //vmWriter.writePop(Segment.POINTER, 1); // pop address pointer into pointer 1
+                        //vmWriter.writePush(Segment.THAT, 0); // push the value of the address pointer back onto stack
 
                     } else {
-                        vmWriter.writePush(kindSegment2(s.kind()), s.index());
+                        //vmWriter.writePush(kindSegment2(s.kind()), s.index());
                     }
 
                 }
@@ -472,13 +474,13 @@ public class Parser {
             case NULL:
             case TRUE:
                 expectPeek(TokenType.FALSE, TokenType.NULL, TokenType.TRUE);
-                vmWriter.writePush(Segment.CONST, 0);
+                //vmWriter.writePush(Segment.CONST, 0);
                 if (currentToken.type == TokenType.TRUE)
-                    vmWriter.writeArithmetic(Command.NOT);
+                    //vmWriter.writeArithmetic(Command.NOT);
                 break;
             case THIS:
                 expectPeek(TokenType.THIS);
-                vmWriter.writePush(Segment.POINTER, 0);
+                //vmWriter.writePush(Segment.POINTER, 0);
                 break;
 
             case LPAREN:
@@ -516,7 +518,7 @@ public class Parser {
 
      // '{' varDec* statements '}'
     void parseSubroutineBody(String functName, TokenType subroutineType) {
-        
+
         printNonTerminal("subroutineBody");
         expectPeek(TokenType.LBRACE);
         while (peekTokenIs(TokenType.VAR)) {
@@ -538,6 +540,17 @@ public class Parser {
         parseStatements();
         expectPeek(TokenType.RBRACE);
         printNonTerminal("/subroutineBody");
+    }
+
+    private void expectPeek(TokenType type) {
+        if (peekToken.type == type) {
+            nextToken();
+            xmlOutput.append(String.format("%s\r\n", currentToken.toString()));
+        } else {
+            // throw new Error("Syntax error - expected " + type + " found " +
+            // peekToken.lexeme);
+            //throw new Error("Expected " + type.value);
+        }
     }
 
     void compileOperators(TokenType type) {
@@ -589,6 +602,8 @@ public class Parser {
         // throw new Error( "Expected a statement"");
 
     }
+
+    
 
     private Segment kindSegment2(Kind kind) {
         if (kind == Kind.STATIC)
