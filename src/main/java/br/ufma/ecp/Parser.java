@@ -3,6 +3,7 @@ package br.ufma.ecp;
 import br.ufma.ecp.token.Token;
 import br.ufma.ecp.token.TokenType;
 
+
 public class Parser {
 
     private static class ParseError extends RuntimeException {}
@@ -10,6 +11,9 @@ public class Parser {
     private Token currentToken;
     private Token peekToken;
     private StringBuilder xmlOutput = new StringBuilder();
+    private SymbolTable symbolTable;
+
+    private String className; // nome da classe
 
     public Parser (byte[] input) {
         scan = new Scanner(input);
@@ -25,10 +29,50 @@ public class Parser {
         
     }
 
+    // 'class' className '{' classVarDec* subroutineDec* '}'
+    public void parseClass () {
+
+        printNonTerminal("class");
+        expectPeek(TokenType.CLASS);
+        expectPeek(TokenType.IDENT);
+        className = currentToken.lexeme;
+        
+        expectPeek(TokenType.LBRACE);
+
+        while ( peekTokenIs(TokenType.STATIC) || peekTokenIs(TokenType.FIELD) ) {
+            parseClassVarDec();
+        }
+
+        while (peekTokenIs(TokenType.FUNCTION) || peekTokenIs(TokenType.CONSTRUCTOR) || peekTokenIs(TokenType.METHOD)) {
+            //parseSubroutineDec();
+        }      
+        
+        expectPeek(TokenType.RBRACE);
+        printNonTerminal("class");
+
+        
+    }
+
+    // classVarDec → ( 'static' | 'field' ) type varName ( ',' varName)* ';'
+    public void parseClassVarDec () {
+        printNonTerminal("classVarDec");
+        expectPeek(TokenType.FIELD, TokenType.STATIC);
+
+        //SymbolTable.Kind kind = Kind.STATIC;
+        expectPeek(TokenType.INT, TokenType.CHAR, TokenType.BOOLEAN, TokenType.IDENT);
+        expectPeek(TokenType.IDENT);
+        expectPeek(TokenType.SEMICOLON);
+    }
+
+
+
+
+
     //Funções Auxiliares
     public String XMLOutput () {
         return xmlOutput.toString();
     }
+
 
     private void printNonTerminal (String nterminal) {
         xmlOutput.append(String.format("<%s>\r\n", nterminal));
@@ -77,7 +121,7 @@ public class Parser {
         return new ParseError();
     }
 
-    //isNew
+    
     void parseTerm() {
         printNonTerminal("term");
         switch (peekToken.type) {

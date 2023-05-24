@@ -40,6 +40,16 @@ public class ParserTest extends TestSupport {
 
 
     @Test
+    public void testParseSimpleClass () {
+      var input = "class Main {};";
+      var parser = new Parser(input.getBytes(StandardCharsets.UTF_8));
+      parser.parseClass();
+      var result = parser.XMLOutput();
+      System.out.println(result);
+    }
+
+
+    @Test
     public void testParseExpressionSimple() {
         var input = "10+20";
         var parser = new Parser(input.getBytes(StandardCharsets.UTF_8));
