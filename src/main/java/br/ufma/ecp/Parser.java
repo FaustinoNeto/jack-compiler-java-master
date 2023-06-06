@@ -36,8 +36,8 @@ public class Parser {
         peekToken = scan.nextToken();        
     }
 
-    public void parser () {
-        
+    public void parse () {
+        parseClass();
     }
 
     // 'class' className '{' classVarDec* subroutineDec* '}'
@@ -58,7 +58,7 @@ public class Parser {
         }      
         
         expectPeek(TokenType.RBRACE);
-        printNonTerminal("class");
+        printNonTerminal("/class");
 
         
     }
