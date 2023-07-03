@@ -17,14 +17,15 @@ public class Parser {
     private Token peekToken;
     private StringBuilder xmlOutput = new StringBuilder();
 
+    private VMWriter vmWriter = new VMWriter();
+    private SymbolTable symbolTable = new SymbolTable();
+   
     
-    private SymbolTable symbolTable;
-    private VMWriter vmWriter;
     
 
     private String className; // nome da classe
     private int ifLabelNum; // numero de if
-    private int whileLabelNum; // numero de while
+    private int whileLabelNum;// numero de while
 
     public Parser (byte[] input) {
 
@@ -198,13 +199,29 @@ public class Parser {
 
     // 'while' '(' expression ')' '{' statements '}'
     void parseWhile() {
-        printNonTerminal("whileStatement");       
+
+        printNonTerminal("whileStatement");
+
+        var labelTrue = "WHILE_EXP" + whileLabelNum;
+        var labelFalse = "WHILE_END" + whileLabelNum;
+        whileLabelNum++;
+
+        vmWriter.writeLabel(labelTrue);
+
         expectPeek(TokenType.WHILE);
         expectPeek(TokenType.LPAREN);
         parseExpression();
+
+        vmWriter.writeArithmetic(Command.NOT);
+        vmWriter.writeIf(labelFalse);
+
         expectPeek(TokenType.RPAREN);
         expectPeek(TokenType.LBRACE);
         parseStatements();
+
+        vmWriter.writeGoto(labelTrue); 
+        vmWriter.writeLabel(labelFalse); 
+
         expectPeek(TokenType.RBRACE);
         printNonTerminal("/whileStatement");
     }
@@ -212,19 +229,38 @@ public class Parser {
     // 'if' '(' expression ')' '{' statements '}' ( 'else' '{' statements '}' )?
     void parseIf() {
         printNonTerminal("ifStatement");
+
+        var labelTrue = "IF_TRUE" + ifLabelNum;
+        var labelFalse = "IF_FALSE" + ifLabelNum;
+        var labelEnd = "IF_END" + ifLabelNum;
+
+        ifLabelNum++;
+    
         expectPeek(TokenType.IF);
         expectPeek(TokenType.LPAREN);
         parseExpression();
-        expectPeek(TokenType.RPAREN); 
+        expectPeek(TokenType.RPAREN);
+
+        vmWriter.writeIf(labelTrue);
+        vmWriter.writeGoto(labelFalse);
+        vmWriter.writeLabel(labelTrue);
+    
         expectPeek(TokenType.LBRACE);
         parseStatements();
         expectPeek(TokenType.RBRACE);
+        if (peekTokenIs(TokenType.ELSE)){
+            vmWriter.writeGoto(labelEnd);
+        }
 
-        if (peekTokenIs(TokenType.ELSE)) {
+        vmWriter.writeLabel(labelFalse);
+
+        if (peekTokenIs(TokenType.ELSE))
+        {
             expectPeek(TokenType.ELSE);
             expectPeek(TokenType.LBRACE);
             parseStatements();
-            expectPeek(TokenType.RBRACE);            
+            expectPeek(TokenType.RBRACE);
+            vmWriter.writeLabel(labelEnd);
         }
 
         printNonTerminal("/ifStatement");
@@ -272,11 +308,14 @@ public class Parser {
     void parseReturn() {
         printNonTerminal("returnStatement");
         expectPeek(TokenType.RETURN);
-
         if (!peekTokenIs(TokenType.SEMICOLON)) {
             parseExpression();
-        } 
-        expectPeek(TokenType.SEMICOLON);        
+        } else {
+            vmWriter.writePush(Segment.CONST, 0);
+        }
+        expectPeek(TokenType.SEMICOLON);
+        vmWriter.writeReturn();
+
         printNonTerminal("/returnStatement");
     }
 
@@ -435,13 +474,32 @@ public class Parser {
     public void compileOperators(TokenType type) {
 
         if (type == TokenType.ASTERISK) {
-            ;
+            vmWriter.writeCall("Math.multiply", 2);
         } else if (type == TokenType.SLASH) {
-            ;
+            vmWriter.writeCall("Math.divide", 2);
         } else {
-            ;
+            vmWriter.writeArithmetic(typeOperator(type));
         }
     }
+
+    private Command typeOperator(TokenType type) {
+        if (type == TokenType.PLUS)
+            return Command.ADD;
+        if (type == TokenType.MINUS)
+            return Command.SUB;
+        if (type == TokenType.LT)
+            return Command.LT;
+        if (type == TokenType.GT)
+            return Command.GT;
+        if (type == TokenType.EQ)
+            return Command.EQ;
+        if (type == TokenType.AND)
+            return Command.AND;
+        if (type == TokenType.OR)
+            return Command.OR;
+        return null;
+    }
+  
     
 
     //Funções Auxiliares
@@ -450,7 +508,7 @@ public class Parser {
     }
 
     public String VMOutput() {
-        return "";
+        return vmWriter.vmOutput();
     }
 
     private void printNonTerminal(String nterminal) {
