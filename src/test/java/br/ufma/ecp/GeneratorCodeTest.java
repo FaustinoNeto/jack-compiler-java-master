@@ -279,7 +279,6 @@ public class GeneratorCodeTest {
         assertEquals(expected, actual);
     }
 
-
     @Test
     public void testSimpleFunctionWithVar () {
         var input = """
