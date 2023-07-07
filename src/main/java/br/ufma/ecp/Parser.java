@@ -2,10 +2,8 @@ package br.ufma.ecp;
 
 import br.ufma.ecp.token.Token;
 import br.ufma.ecp.token.TokenType;
-
 import br.ufma.ecp.SymbolTable.Kind;
 import br.ufma.ecp.SymbolTable.Symbol;
-
 import br.ufma.ecp.VMWriter.Command;
 import br.ufma.ecp.VMWriter.Segment;
 
@@ -14,27 +12,25 @@ public class Parser {
     private Scanner scan;
     private Token currentToken;
     private Token peekToken;
-    private StringBuilder xmlOutput = new StringBuilder();
-
-    private SymbolTable symbolTable;
+    private StringBuilder xmlOutput = new StringBuilder();    
     private SymbolTable symTable = new SymbolTable();
-
     private VMWriter vmWriter = new VMWriter();
-
-    private String className; // nome da classe
-    private int ifLabelNum = 0; // numero de if
-    private int whileLabelNum = 0; // numero de while
+    private String className; 
+    private int ifLabelNum = 0; 
+    private int whileLabelNum = 0; 
     
 
     public Parser(byte[] input) {
 
         scan = new Scanner(input);
-        symbolTable = new SymbolTable();
+        symTable = new SymbolTable();        
         vmWriter = new VMWriter();
+        
 
         nextToken();
         ifLabelNum = 0;
         whileLabelNum = 0;
+        
     }
 
     public void nextToken() {
@@ -73,6 +69,7 @@ public class Parser {
         printNonTerminal("varDec");
         expectPeek(TokenType.VAR);
 
+      
         SymbolTable.Kind kind = Kind.VAR;
 
         // 'int' | 'char' | 'boolean' | className
@@ -133,26 +130,26 @@ public class Parser {
             var nArgs = 0;
     
             var ident = currentToken.lexeme;
-            var symbol = symTable.resolve(ident); // classe ou objeto
+            var symbol = symTable.resolve(ident); 
             var functionName = ident + ".";
     
-            if (peekTokenIs(TokenType.LPAREN)) { // método da propria classe
+            if (peekTokenIs(TokenType.LPAREN)) { 
                 expectPeek(TokenType.LPAREN);
                 vmWriter.writePush(Segment.POINTER, 0);
                 nArgs = parseExpressionList() + 1;
                 expectPeek(TokenType.RPAREN);
                 functionName = className + "." + ident;
             } else {
-                // pode ser um metodo de um outro objeto ou uma função
+                
                 expectPeek(TokenType.DOT);
-                expectPeek(TokenType.IDENT); // nome da função
+                expectPeek(TokenType.IDENT); 
     
-                if (symbol != null) { // é um metodo
+                if (symbol != null) { 
                     functionName = symbol.type() + "." + currentToken.lexeme;
                     vmWriter.writePush(kind2Segment(symbol.kind()), symbol.index());
-                    nArgs = 1; // do proprio objeto
+                    nArgs = 1; 
                 } else {
-                    functionName += currentToken.lexeme; // é uma função
+                    functionName += currentToken.lexeme; 
                 }
     
                 expectPeek(TokenType.LPAREN);
@@ -172,13 +169,15 @@ public class Parser {
         ifLabelNum = 0;
         whileLabelNum = 0;
 
-        symbolTable.startSubroutine();
+        symTable.startSubroutine();
 
         expectPeek(TokenType.CONSTRUCTOR, TokenType.FUNCTION, TokenType.METHOD);
         var subroutineType = currentToken.type;
 
         if (subroutineType == TokenType.METHOD) {
-            symbolTable.define("this", className, Kind.ARG);
+
+            symTable.define("this", className, Kind.ARG);
+            //symbolTable pode ser o errox
         }
 
         // 'int' | 'char' | 'boolean' | className
@@ -201,7 +200,7 @@ public class Parser {
 
         SymbolTable.Kind kind = Kind.ARG;
 
-        if (!peekTokenIs(TokenType.RPAREN)) // verifica se tem pelo menos uma expressao
+        if (!peekTokenIs(TokenType.RPAREN)) 
         {
             expectPeek(TokenType.INT, TokenType.CHAR, TokenType.BOOLEAN, TokenType.IDENT);
             String type = currentToken.lexeme;
@@ -392,13 +391,13 @@ public class Parser {
         printNonTerminal("expressionList");
         var numArg = 0;
 
-        if (!peekTokenIs(TokenType.RPAREN)) // verifica se tem pelo menos uma expressao
+        if (!peekTokenIs(TokenType.RPAREN)) 
         {
             parseExpression();
             numArg = 1;
         }
 
-        // procurando as outras
+        
         while (peekTokenIs(TokenType.COMMA)) {
             expectPeek(TokenType.COMMA);
             parseExpression();
@@ -438,8 +437,8 @@ public class Parser {
                 vmWriter.writePush(Segment.CONST, Integer.parseInt(currentToken.lexeme));
                 break;
 
-            case STRING: // Rotina do sistema operacional: ->calcular tam da string->empilhar->alocar uma
-                         // nova string
+            case STRING: // Operating system routine: ->calculate string size->stack->allocate one
+                         
                 expectPeek(TokenType.STRING);
                 var strValue = currentToken.lexeme;
                 vmWriter.writePush(Segment.CONST, strValue.length());
@@ -455,7 +454,9 @@ public class Parser {
 
                 Symbol sym = symTable.resolve(currentToken.lexeme);
 
-                if (peekTokenIs(TokenType.LBRACKET)) { // array
+                if (peekTokenIs(TokenType.LPAREN) || peekTokenIs(TokenType.DOT)) {
+                    parseSubroutineCall();
+                } else if (peekTokenIs(TokenType.LBRACKET)) { // array
                         expectPeek(TokenType.LBRACKET);
                         parseExpression();
                         vmWriter.writePush(kind2Segment(sym.kind()), sym.index());
@@ -506,7 +507,7 @@ public class Parser {
         printNonTerminal("/term");
     }
 
-    // ---------------Gerador de código para expressões ---------------
+    // ---------------Code generator for expressions---------------
 
     // 'do' subroutineCall ';'
     void parseDo() {

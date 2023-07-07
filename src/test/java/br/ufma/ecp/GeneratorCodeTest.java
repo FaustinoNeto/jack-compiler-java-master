@@ -1,12 +1,9 @@
 package br.ufma.ecp;
 
-
-
 import static org.junit.Assert.assertEquals;
-
 import java.nio.charset.StandardCharsets;
-
 import org.junit.Test;
+
 
 public class GeneratorCodeTest {
 
@@ -26,6 +23,7 @@ public class GeneratorCodeTest {
             assertEquals(expected, actual);
     }
 
+
     @Test
     public void testSimpleExpression () {
         var input = """
@@ -42,6 +40,7 @@ public class GeneratorCodeTest {
                     """;
             assertEquals(expected, actual);
     }
+
 
     @Test
     public void testLiteralString () {
@@ -80,6 +79,7 @@ public class GeneratorCodeTest {
                     """;
             assertEquals(expected, actual);
     }
+
 
     @Test
     public void testNull () {
@@ -129,6 +129,7 @@ public class GeneratorCodeTest {
             assertEquals(expected, actual);
     }
 
+
     @Test
     public void testNot () {
         var input = """
@@ -144,6 +145,7 @@ public class GeneratorCodeTest {
                     """;
             assertEquals(expected, actual);
     }
+
 
     @Test
     public void testMinus () {
@@ -177,6 +179,7 @@ public class GeneratorCodeTest {
                     """;
             assertEquals(expected, actual);
     }
+
 
     @Test
     public void testReturnExpr () {
@@ -223,6 +226,7 @@ public class GeneratorCodeTest {
                     """;
             assertEquals(expected, actual);
     }
+
 
     @Test
     public void testWhile () {
@@ -278,6 +282,7 @@ public class GeneratorCodeTest {
                 """;
         assertEquals(expected, actual);
     }
+
 
     @Test
     public void testSimpleFunctionWithVar () {
@@ -386,7 +391,6 @@ public class GeneratorCodeTest {
         var parser = new Parser(input.getBytes(StandardCharsets.UTF_8));
         parser.parse();
 
-
         String actual = parser.VMOutput();
         String expected = """
             function Main.soma 0
@@ -406,6 +410,7 @@ public class GeneratorCodeTest {
  
  
     }
+
 
     @Test
     public void methodTest () {
@@ -438,6 +443,7 @@ public class GeneratorCodeTest {
         assertEquals(expected, actual);
     }
 
+
     @Test
     public void doStatement () {
         var input = """
@@ -466,7 +472,8 @@ public class GeneratorCodeTest {
         assertEquals(expected, actual);
     }
 
-    @Test
+
+   @Test
     public void methodsConstructorTest () {
         var input = """
             class Point {
@@ -541,7 +548,7 @@ public class GeneratorCodeTest {
         assertEquals(expected, actual);
     }
 
-    // outros testes adicionais
+    // other tests adds
 
     @Test
     public void ifTest () {
@@ -620,6 +627,7 @@ public class GeneratorCodeTest {
                 """;
         assertEquals(expected, actual);
     }
+    
 
     @Test
     public void whileTest () {
@@ -728,12 +736,6 @@ public class GeneratorCodeTest {
         assertEquals(expected, actual);
     }
 
-    
-
-
-
-   
-
 
     @Test
     public void termExpressionLiteralKeyword () {
@@ -765,6 +767,7 @@ public class GeneratorCodeTest {
                 """;
         assertEquals(expected, actual);
     }
+
 
     @Test
     public void termExpressionVar () {
@@ -827,9 +830,6 @@ public class GeneratorCodeTest {
             return
                 """;
         assertEquals(expected, actual);
-    }
-
-
-   
+    }   
     
 }

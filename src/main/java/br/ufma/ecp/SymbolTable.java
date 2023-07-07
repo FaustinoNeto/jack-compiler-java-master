@@ -58,11 +58,16 @@ public class SymbolTable {
     }
 
     public Symbol resolve (String name) {
+
         Symbol s = subroutineScope.get(name);
-        if (s != null) return s;
-        else return classScope.get(name);
+        if (s != null) {
+            return s;
+        } else {
+            return classScope.get(name);
+        }       
         
     }
+
 
     int varCount(Kind kind) {
         return countVars.get(kind);
